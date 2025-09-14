@@ -1,5 +1,6 @@
 #include <appdef.hpp>
 #include <sdk/calc/calc.hpp>
+#include <sdk/os/debug.hpp>
 #include <sdk/os/input.hpp>
 #include <sdk/os/lcd.hpp>
 #include <stdio.h>
@@ -253,7 +254,44 @@ extern "C" int __attribute__((section(".bootstrap.text"))) main(void) {
     drawChar('A', {10, 20}, pFont, color(255, 255, 0)); // Yellow 'A'
     drawChar('B', {20, 20}, pFont, color(0, 255, 255)); // Cyan 'B'
     LCD_Refresh();
-    _wait();
+    Debug_WaitKey();
+
+    fillScreen(color(0, 0, 0)); // Black background
+
+    // Create a PegTextThing with a string to display
+    PegTextThing line1("PEG TEST", TT_COPY);
+    line1.SetFont(&Latin_Font_9);
+
+    PegTextThing line2("0123456789", TT_COPY);
+    line2.SetFont(&Latin_Font_9);
+
+    // Get the text to render
+    TCHAR *text1 = line1.DataGet();
+    TCHAR *text2 = line2.DataGet();
+
+    PegPoint pos = {10, 20}; // Starting position
+
+    // Draw the first line
+    for (int i = 0; text1[i] != '\0'; i++) {
+      drawChar(text1[i], pos, &Latin_Font_9, color(255, 255, 0)); // Yellow
+      pos.x += 8; // Advance X position for next char (8 pixels wide)
+    }
+
+    // Move to the next line
+    pos.x = 10;
+    pos.y += 12; // Move Y down by 12 pixels
+
+    // Draw the second line
+    for (int i = 0; text2[i] != '\0'; i++) {
+      drawChar(text2[i], pos, &Latin_Font_9, color(0, 255, 255)); // Cyan
+      pos.x += 8;
+    }
+
+    LCD_Refresh();
+    Debug_WaitKey();
+
+    if (!waitForKeyPress())
+      break;
 
   } while (false); // Loop only once, using 'break' to exit early.
 
