@@ -136,7 +136,7 @@ PegRect PegRect::operator^=(const PegRect &Rect) {
     return *this;
   }
 
-  if (wTop >= Rect.wTop && wBottom <= wBottom) {
+  if (wTop >= Rect.wTop && wBottom <= Rect.wBottom) {
     if (wLeft < Rect.wLeft) {
       wRight = Rect.wLeft - 1; // trim the right
     } else {
