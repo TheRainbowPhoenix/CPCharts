@@ -1,6 +1,6 @@
 # run `make all` to compile the .hhk and .bin file, use `make` to compile only the .bin file.
 # The .hhk file is the original format, the bin file is a newer format.
-APP_NAME:=ChartTest
+APP_NAME:=PEGTest
 
 ifndef SDK_DIR
 $(error You need to define the SDK_DIR environment variable, and point it to the sdk/ folder)
@@ -10,7 +10,7 @@ AS:=sh4aeb-elf-gcc
 AS_FLAGS:=-DAPPNAME_STRING=\"$(APP_NAME)\"
 
 COMMON_FLAGS:=-flto -ffunction-sections -fdata-sections -ffreestanding -fshort-wchar -O2 -m4a-nofpu -DAPPNAME_STRING=\"$(APP_NAME)\"
-INCLUDES:=-I $(SDK_DIR)/include/
+INCLUDES:=-I $(SDK_DIR)/include/ -I $(SOURCEDIR)/peg/include
 WARNINGS:=-Wall -Wextra
 
 CC:=sh4aeb-elf-gcc

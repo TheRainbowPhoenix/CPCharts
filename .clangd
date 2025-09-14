@@ -1,5 +1,6 @@
 CompileFlags:
   Add: [
       "-I/opt/cross/hollyhock-2/sdk/include/",
-      "-I/toolchain/sh4aeb-elf/sys-include/"
+      "-I/toolchain/sh4aeb-elf/sys-include/",
+      "-I/workspaces/CPCharts/src/peg/include/"
   ]
