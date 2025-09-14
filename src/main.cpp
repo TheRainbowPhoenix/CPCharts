@@ -1,6 +1,7 @@
 #include <appdef.hpp>
 #include <sdk/calc/calc.hpp>
 #include <sdk/os/input.hpp>
+#include <sdk/os/lcd.hpp>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -10,6 +11,29 @@ APP_NAME("PEG Test")
 APP_DESCRIPTION("PegRect Test")
 APP_AUTHOR("Phoebe")
 APP_VERSION("1.0.0")
+// =================================================================
+// Dummy Font Definition
+// =================================================================
+// Bitmap data for an 8x8 font containing 'A' and 'B'
+UCHAR DummyFontData[] = {
+    // Char 'A'
+    0x18, 0x24, 0x42, 0x42, 0x7E, 0x42, 0x42, 0x00,
+    // Char 'B'
+    0x7C, 0x42, 0x42, 0x7C, 0x42, 0x42, 0x7C, 0x00};
+
+// The PegFont structure describing our dummy font
+PegFont DummyFont = {
+    0,            // uType: 0 = Fixed-width, no outline/alias
+    7,            // uAscent:  Ascent above baseline
+    1,            // uDescent: Descent below baseline
+    8,            // uHeight:  Total height of character
+    1,            // wBytesPerLine: 1 byte for an 8-pixel wide character
+    'A',          // wFirstChar:  First character is 'A'
+    'B',          // wLastChar:   Last character is 'B'
+    NULL,         // pOffsets:    NULL for fixed-width fonts
+    NULL,         // pNext:       NULL for single-page fonts
+    DummyFontData // pData:       Pointer to the bitmap data
+};
 
 // =================================================================
 // Helper Functions
@@ -45,12 +69,7 @@ void printTestResult(const char *label, const PegRect &actual,
   }
 }
 
-// Waits for any key press to continue, or CLEAR to exit the program.
-// Returns 'false' if the user wants to exit, 'true' otherwise.
-bool waitForKeyPress() {
-  printf("\n> [EXE] = continue, [CLEAR] = exit\n");
-  fflush(stdout);
-
+bool _wait() {
   struct InputEvent event;
   while (true) {
     GetInput(&event, 0xFFFFFFFF, 0x10);
@@ -60,6 +79,38 @@ bool waitForKeyPress() {
       return (event.data.key.keyCode != KEYCODE_POWER_CLEAR);
     }
     LCD_Refresh(); // Keep the system responsive while waiting
+  }
+}
+
+// Waits for any key press to continue, or CLEAR to exit the program.
+// Returns 'false' if the user wants to exit, 'true' otherwise.
+bool waitForKeyPress() {
+  printf("\n> [EXE] = continue, [CLEAR] = exit\n");
+  fflush(stdout);
+  return _wait();
+}
+
+// --- New Drawing Helper ---
+void drawChar(TCHAR ch, PegPoint pos, const PegFont *pFont, uint16_t color) {
+  if (!pFont || ch < pFont->wFirstChar || ch > pFont->wLastChar) {
+    return; // Character not in font
+  }
+
+  // Calculate the starting position in the bitmap data array
+  WORD charOffset =
+      (ch - pFont->wFirstChar) * pFont->uHeight * pFont->wBytesPerLine;
+  const UCHAR *pData = pFont->pData + charOffset;
+
+  // Loop through each row (scanline) of the character
+  for (UCHAR y = 0; y < pFont->uHeight; y++) {
+    UCHAR rowData = *pData;
+    // Loop through each bit (pixel) in the row
+    for (UCHAR x = 0; x < 8; x++) {
+      if (rowData & (0x80 >> x)) { // Check if the bit is set
+        setPixel(pos.x + x, pos.y + y, color);
+      }
+    }
+    pData++; // Move to the next row of data
   }
 }
 
@@ -179,6 +230,30 @@ extern "C" int __attribute__((section(".bootstrap.text"))) main(void) {
     rectA ^= rectB; // Subtract B from A
     expectedRect.Set(0, 0, 49, 100);
     printTestResult("Result A ^= B", rectA, expectedRect);
+
+    // =================== Test 8: PegFont & PegTextThing ===================
+    printHeader("Test 8: PegFont & PegTextThing");
+
+    // Test the static font functions
+    PegTextThing::SetDefaultFont(PEG_DEFAULT_FONT, &DummyFont);
+    PegFont *pFont = PegTextThing::GetDefaultFont(PEG_DEFAULT_FONT);
+    printTestResult("GetDefaultFont returns set font", pFont == &DummyFont,
+                    true);
+
+    // Test PegTextThing instantiation
+    PegTextThing myText("AB", TT_COPY);
+    myText.SetFont(pFont);
+    printf("PegTextThing created with text: '%s'\n", myText.DataGet());
+
+    printf("Now rendering to screen...\n");
+    fflush(stdout);
+
+    // Visual test: Draw the characters to the screen
+    fillScreen(color(0, 0, 0));                         // Black background
+    drawChar('A', {10, 20}, pFont, color(255, 255, 0)); // Yellow 'A'
+    drawChar('B', {20, 20}, pFont, color(0, 255, 255)); // Cyan 'B'
+    LCD_Refresh();
+    _wait();
 
   } while (false); // Loop only once, using 'break' to exit early.
 

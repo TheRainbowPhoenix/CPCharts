@@ -34,8 +34,10 @@ Notes:
 
 #include "pegtypes.hpp"
 
-// #include "pegkeys.hpp"
-// #include "pfonts.hpp"
+#include "pegkeys.hpp"
+#include "pfonts.hpp"
+// #include "psysfont.hpp"
+
 // #include "pmessage.hpp"
 // #include "pscreen.hpp"
 // #include "pthing.hpp"

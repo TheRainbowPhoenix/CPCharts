@@ -2,7 +2,7 @@
 #define _PEGTYPES_
 
 #include "tchar.h"
-/*--------------------------------------------------------------------------*/
+
 // Fundamental data types
 //
 // The data types used by PEG are:
@@ -20,7 +20,6 @@
 //  Since many environments define some or all of the same data types,
 //  we only define our basic data types when required and use the environment
 //  definitions when available.
-/*--------------------------------------------------------------------------*/
 
 #if defined(PEGWIN32)
 
@@ -53,13 +52,11 @@ typedef ULONG DWORD;
 
 typedef short int SIGNED; // 16 bit signed
 
-/*
 #ifdef PEG_UNICODE
 typedef unsigned short TCHAR; // 16 bit unsigned for PEG_UNICODE
 #else
 typedef char TCHAR;          // 8 bit unsigned, no PEG_UNICODE
 #endif
-*/
 
 #ifdef PEG_STRLIB
 TCHAR *PegStrCat(TCHAR *s1, const TCHAR *s2);
@@ -103,22 +100,17 @@ void AsciiToUnicode(TCHAR *s1, const char *s2);
 
 #endif // PEG_STRLIB
 
-/*--------------------------------------------------------------------------*/
 // ROMDATA- data storage qualifier used to put bitmaps, fonts, and string
 // literals in ROM. May have to be re-defined for your compiler/linker.
-/*--------------------------------------------------------------------------*/
+
 #define ROMDATA const
 
-/*--------------------------------------------------------------------------*/
-/*--------------------------------------------------------------------------*/
 #ifdef USE_PEG_LTOA
 TCHAR *_ltoa(long val, TCHAR *s, int rad);
 #define ltoa _ltoa
 #endif
 
-/*--------------------------------------------------------------------------*/
 // PEG_SJIS_CONVERSION- Function to convert SJIS to Unicode
-/*--------------------------------------------------------------------------*/
 
 #ifdef PEG_SJIS_CONVERSION
 #define SJIS_MAPTABLE_ENTRIES 6880
@@ -130,9 +122,7 @@ void UnicodeToSJIS(TCHAR *s1, const TCHAR *s2);
 TCHAR UnicodeToSJIS(TCHAR c1);
 #endif
 
-/*--------------------------------------------------------------------------*/
 // COLORVAL- size of this data type depends on number of output colors
-/*--------------------------------------------------------------------------*/
 
 #if !defined(PEG_NUM_COLORS)
 
@@ -150,10 +140,8 @@ typedef WORD COLORVAL; // on embedded target, WORD should be defined as 16-bits
 typedef UCHAR COLORVAL;
 #endif
 
-/*--------------------------------------------------------------------------*/
 // Thing types- These values are found in the uType member of all Peg
 // GUI objects, and can be queried via the Type() function.
-/*--------------------------------------------------------------------------*/
 
 const UCHAR TYPE_THING = 1;
 const UCHAR TYPE_TITLE = 2;
@@ -184,9 +172,7 @@ const UCHAR TYPE_TOOL_BAR_PANEL = 27;
 const UCHAR TYPE_TOOL_BAR = 28;
 const UCHAR TYPE_DECORATEDBUTTON = 29;
 
-/*--------------------------------------------------------------------------*/
 // Chart types- only include if PEG_CHARTING is defined
-/*--------------------------------------------------------------------------*/
 
 #ifdef PEG_CHARTING
 
@@ -196,9 +182,7 @@ const UCHAR TYPE_MULTI_LINE_CHART = 42;
 
 #endif
 
-/*--------------------------------------------------------------------------*/
 // HMI types- only include if PEG_HMI_GADGETS is defined
-/*--------------------------------------------------------------------------*/
 
 #ifdef PEG_HMI_GADGETS
 
@@ -214,20 +198,16 @@ const UCHAR TYPE_CBM_DIAL = 57;
 
 #endif
 
-/*--------------------------------------------------------------------------*/
 // ... leave twenty additional types for future gadgets ...
 //
 // Note: It isn't critical if the class types need to be renumbered at
 // some point. Only WindowBuilder project files would be affected.
 //
-/*--------------------------------------------------------------------------*/
 
 const UCHAR FIRST_USER_CONTROL_TYPE = 80;
 
-/*--------------------------------------------------------------------------*/
 // Thing types for classes derived from PegWindow. The library performs
 // slightly different processing on PegWindow derived classes.
-/*--------------------------------------------------------------------------*/
 
 const UCHAR TYPE_WINDOW = 150;
 const UCHAR TYPE_DIALOG = 151;
@@ -248,10 +228,8 @@ const UCHAR TYPE_EDITBOX = 165;
 
 const UCHAR FIRST_USER_WINDOW_TYPE = 200;
 
-/*--------------------------------------------------------------------------*/
 // Reserved button IDs. Buttons with these IDs are treated specially by modal
 // dialog and modal message window.
-/*--------------------------------------------------------------------------*/
 
 const WORD IDB_CLOSE = 1000;
 const WORD IDB_SYSTEM = 1001;
@@ -263,10 +241,8 @@ const WORD IDB_YES = 1006;
 const WORD IDB_NO = 1007;
 const WORD IDB_RETRY = 1008;
 
-/*--------------------------------------------------------------------------*/
 // The object style flags. These flags change the appearance and operation of
 // many PEG object types.
-/*--------------------------------------------------------------------------*/
 
 // frame styles:
 
@@ -443,11 +419,10 @@ const WORD SS_STANDARDSTYLE =
 const WORD AF_TRANSPARENT = 0x4000;
 const WORD AF_ENABLED = 0x8000;
 
-/*--------------------------------------------------------------------------*/
 // Extended style defines for PEG_CHARTING classes. These are NOT PegThing
 // Style() flags, these are extended style flags used only with PegChart
 // classes.
-/*--------------------------------------------------------------------------*/
+
 #ifdef PEG_CHARTING
 
 const WORD CS_DRAWXGRID = 0x0001;
@@ -469,11 +444,10 @@ const WORD CS_DRAWYLABELS = 0x8000;
 
 #endif
 
-/*--------------------------------------------------------------------------*/
 // PEG signal definitions. PegBaseSignals are supported by all objects. The
 // remaining signals are only supported by the object type indicated in the
 // enumeration name.
-/*--------------------------------------------------------------------------*/
+
 enum PegBaseSignals {
   PSF_SIZED = 0,      // sent when the object is moved or sized
   PSF_FOCUS_RECEIVED, // sent when the object receives input focus
@@ -534,11 +508,9 @@ enum PegTerminalSignals {
                   // terminal command line.
 };
 
-/*--------------------------------------------------------------------------*/
 // System Status flags common to all object types
 // These flags are maintained internally by PEG, but can be modified (at your
 // own risk!) by the application level software.
-/*--------------------------------------------------------------------------*/
 
 const WORD PSF_VISIBLE = 0x0001;
 const WORD PSF_CURRENT = 0x0002;
@@ -554,9 +526,8 @@ const WORD PSF_OWNS_POINTER = 0x0400;
 const WORD PSF_ALWAYS_ON_TOP = 0x4000;
 const WORD PSF_VIEWPORT = 0x8000;
 
-/*--------------------------------------------------------------------------*/
 // PegWindow Scroll Modes
-/*--------------------------------------------------------------------------*/
+
 const UCHAR WSM_VSCROLL = 0x01;
 const UCHAR WSM_AUTOVSCROLL = 0x02;
 const UCHAR WSM_HSCROLL = 0x04;
@@ -564,7 +535,6 @@ const UCHAR WSM_AUTOHSCROLL = 0x08;
 const UCHAR WSM_AUTOSCROLL = 0x0A;
 const UCHAR WSM_CONTINUOUS = 0x80;
 
-/*--------------------------------------------------------------------------*/
 // a simple and fast variable swapping algorithm:
 
 #define PEGSWAP(a, b)                                                          \
@@ -574,20 +544,17 @@ const UCHAR WSM_CONTINUOUS = 0x80;
     a ^= b;                                                                    \
   }
 
-/*--------------------------------------------------------------------------*/
 // MIN and MAX macros
 
 #define PEGMIN(a, b) (a > b ? b : a)
 #define PEGMAX(a, b) (a > b ? a : b)
 
-/*--------------------------------------------------------------------------*/
 // macro for converting signal values to signal masks:
 
 #define SIGMASK(a) (1 << (a))
 
 #define ALL_SIGNALS_MASK 0x0F
 
-/*--------------------------------------------------------------------------*/
 // macro for catching signals given object ID and signal value:
 
 #define PEG_SIGNAL(ID, SIG) (FIRST_SIGNAL + (ID << 4) + SIG)
@@ -596,7 +563,6 @@ const UCHAR WSM_CONTINUOUS = 0x80;
 #define SIGNAL(ID, SIG) PEG_SIGNAL(ID, SIG)
 #endif
 
-/*--------------------------------------------------------------------------*/
 // PegPoint definition:
 
 struct PegPoint {
@@ -622,7 +588,6 @@ struct PegPoint {
   }
 };
 
-/*--------------------------------------------------------------------------*/
 // PegRect definition
 
 struct PegRect {
@@ -666,12 +631,10 @@ struct PegRect {
   SIGNED wBottom;
 };
 
-/*--------------------------------------------------------------------------*/
 // Basic Colors- These need to be re-defined based on the type of display.
 // Default settings are provided for 2, 4, 16, and 256 color displays.
 // Other color depths can be supported by extending this list of color
 // definitions.
-/*--------------------------------------------------------------------------*/
 
 #ifdef PEG_RUNTIME_COLOR_CHECK
 
@@ -956,9 +919,7 @@ const COLORVAL WHITE = 1;
 
 #endif // end of PharLap ETS if
 
-/*--------------------------------------------------------------------------*/
 // Color Flags:
-/*--------------------------------------------------------------------------*/
 
 const UCHAR CF_NONE = 0x00;
 const UCHAR CF_FILL = 0x01;
@@ -966,7 +927,6 @@ const UCHAR CF_DASHED = 0x02;
 const UCHAR CF_XOR = 0x04;
 const UCHAR CF_ALPHA = 0x08;
 
-/*--------------------------------------------------------------------------*/
 // The Peg Color Indices, passed when calls are made to 'SetColor'
 
 const UCHAR PCI_NORMAL = 0;
@@ -985,7 +945,6 @@ const UCHAR PCI_SS_BACKGROUND = 9;
 
 #define THING_COLOR_LIST_SIZE 4
 
-/*--------------------------------------------------------------------------*/
 // PegColor definition:
 
 struct PegColor {
@@ -1011,12 +970,10 @@ struct PegColor {
   UCHAR uFlags;
 };
 
-/*--------------------------------------------------------------------------*/
 // PegBitmap structure and flags definition.
 //
 // PegBitmap is a position-independant bitmap header that contains
 // type and size information used by PegScreen.
-/*--------------------------------------------------------------------------*/
 
 #define BMF_RAW 0x00
 #define BMF_RLE 0x01
@@ -1040,11 +997,10 @@ struct PegBitmap {
 #define IS_ROTATED(a) (a->uFlags & BMF_ROTATED)
 #define IS_SPRITE(a) (a->uFlags & BMF_SPRITE)
 
-/*--------------------------------------------------------------------------*/
 // PegCapture data type definition
 //
 // PegCapture is a PegBitmap with extra position and status information.
-/*--------------------------------------------------------------------------*/
+
 class PegCapture {
 public:
   PegCapture(void) {
@@ -1085,14 +1041,10 @@ private:
   BOOL mbValid;
 };
 
-/*--------------------------------------------------------------------------*/
-/*--------------------------------------------------------------------------*/
 // The definition BF_SEPARATOR was mis-spelled in earlier releases. To avoid
 // compile problems with existing application code, we are temporarily
 // definining the old spelling->new spelling. The old spelling will eventually
 // be removed entirely.
-/*--------------------------------------------------------------------------*/
-/*--------------------------------------------------------------------------*/
 
 #define BF_SEPERATOR BF_SEPARATOR
 
