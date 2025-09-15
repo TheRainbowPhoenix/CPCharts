@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>PEG Bitmap Font Viewer</title>
+    <title>PEG 2bpp Bitmap Font Viewer</title>
     <style>
         body { font-family: sans-serif; background-color: #2c2c2c; color: #eee; }
         #controls { margin: 10px; padding: 10px; background-color: #444; border-radius: 5px; }
@@ -21,15 +21,6 @@
     <div class="char-grid" id="charGrid"></div>
 
     <script>
-        function bytesToWords(byteArray) {
-            const words = [];
-            for (let i = 0; i < byteArray.length; i += 2) {
-                const lowByte = byteArray[i];
-                const highByte = byteArray[i + 1];
-                words.push((highByte << 8) | lowByte);
-            }
-            return words;
-        }
         // --- FONT DATA DEFINITIONS ---
         const RAW_SYSFONT_OFFSETS_AS_BYTES = [
             0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000,
@@ -505,7 +496,7 @@
         //         pData: RAW_SYSFONT_DATA
         //     }
         // };
-        const SysFont = {
+        const Font = {
             uType: 1,
             uAscent: 0x10,
             uDescent: 0,
@@ -520,25 +511,23 @@
         // for the *entire* font data blob, not one character.
         // It's calculated from the largest bit offset.
         // SysFont.wBytesPerLine = Math.ceil(SysFont.pOffsets[SysFont.pOffsets.length - 1] / 8 / SysFont.uHeight);
-
+        Font.atlasWidth = Font.pOffsets[Font.pOffsets.length - 4];
 
         const charGrid = document.getElementById('charGrid');
 
         function drawFont() {
             charGrid.innerHTML = '';
-            // We need a running total of the bits to find where each character starts.
-            let bitOffset = 0;
-
-            for (let charCode = SysFont.wFirstChar; charCode <= SysFont.wLastChar; charCode++) {
+            for (let charCode = Font.wFirstChar; charCode <= Font.wLastChar; charCode++) {
                 const container = document.createElement('div');
                 container.className = 'char-container';
                 const canvas = document.createElement('canvas');
                 
-                const charWidth = getCharPixelWidth(charCode, SysFont);
+                const charWidth = getCharPixelWidth(charCode, Font);
                 canvas.width = charWidth > 0 ? charWidth : 8;
-                canvas.height = SysFont.uHeight;
+                canvas.height = Font.uHeight;
                 
-                renderBitmapChar(charCode, canvas.getContext('2d'), SysFont);
+                renderBitmapChar(canvas.getContext('2d'), Font, charWidth, charCode);
+
                 const info = document.createElement('div');
                 info.className = 'char-info';
                 const charDisplay = charCode >= 32 && charCode <= 126 ? String.fromCharCode(charCode).replace(' ', 'sp') : '.';
@@ -558,44 +547,30 @@
             const startBitOffset = font.pOffsets[charIndex];
             const endBitOffset = font.pOffsets[charIndex + 1];
             
+            // The width is simply the difference in bit offsets.
             return endBitOffset - startBitOffset;
         }
 
-        // This function now correctly renders the uncompressed bitmap data.
-        function renderBitmapChar(charCode, ctx, font) {
-            ctx.fillStyle = '#10ff10'; // Bright Green
-            const charWidth = getCharPixelWidth(charCode, font);
-            if (charWidth === 0) return;
+        // Corrected 1bpp renderer using pitched memory logic.
+        function renderBitmapChar(ctx, font, width, charCode) {
+            if (width === 0) return;
+            ctx.fillStyle = '#00F000'; // Solid black pixels
 
             const charIndex = charCode - font.wFirstChar;
-            const bitOffset = font.pOffsets[charIndex];
-
-            const colors = [
-                'rgba(0,0,0,0)',       // 00: Transparent
-                'rgba(16,255,16,0.33)', // 01: Low alpha
-                'rgba(16,255,16,0.66)', // 10: Medium alpha
-                'rgba(16,255,16,1.0)'  // 11: Solid
-            ];
+            const startBitOffsetOfChar = font.pOffsets[charIndex];
 
             for (let y = 0; y < font.uHeight; y++) {
-                for (let x = 0; x < charWidth; x++) {
-                    const pixelIndex = (y * charWidth) + x;
-                    const bitPos = bitOffset + (pixelIndex * 2);
-                    
-                    const byteIndex = Math.floor(bitPos / 8);
-                    const bitInByte = bitPos % 8;
+                // Calculate the start of the current scanline for this character
+                const startBitOfScanline = startBitOffsetOfChar + (y * font.wBytesPerLine * 8);
 
-                    // Read 16 bits to handle pixel data crossing byte boundaries
-                    const word = (font.pData[byteIndex] << 8) | (font.pData[byteIndex + 1] || 0);
+                for (let x = 0; x < width; x++) {
+                    // Get the specific bit for this pixel
+                    const currentBit = startBitOfScanline + x;
+                    const byteIndex = Math.floor(currentBit / 8);
+                    const bitInByte = 7 - (currentBit % 8);
 
-                    // Shift the word to align our 2 bits to the top
-                    const shiftedWord = word << bitInByte;
-
-                    // Extract the top 2 bits to get our pixel value (0, 1, 2, or 3)
-                    const pixelValue = (shiftedWord >> 14) & 0x03;
-
-                    if (pixelValue > 0) {
-                        ctx.fillStyle = colors[pixelValue];
+                    // Check if the bit is set and draw the pixel
+                    if ((font.pData[byteIndex] >> bitInByte) & 1) {
                         ctx.fillRect(x, y, 1, 1);
                     }
                 }
