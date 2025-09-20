@@ -16,29 +16,68 @@ APP_VERSION("1.0.0")
 // Dummy Font Definition
 // =================================================================
 // Bitmap data for an 8x8 font containing 'A' and 'B'
-UCHAR DummyFontData[] = {
-    // Char 'A'
-    0x18, 0x24, 0x42, 0x42, 0x7E, 0x42, 0x42, 0x00,
-    // Char 'B'
-    0x7C, 0x42, 0x42, 0x7C, 0x42, 0x42, 0x7C, 0x00};
-
-// The PegFont structure describing our dummy font
-PegFont DummyFont = {
-    0,            // uType: 0 = Fixed-width, no outline/alias
-    7,            // uAscent:  Ascent above baseline
-    1,            // uDescent: Descent below baseline
-    8,            // uHeight:  Total height of character
-    1,            // wBytesPerLine: 1 byte for an 8-pixel wide character
-    'A',          // wFirstChar:  First character is 'A'
-    'B',          // wLastChar:   Last character is 'B'
-    NULL,         // pOffsets:    NULL for fixed-width fonts
-    NULL,         // pNext:       NULL for single-page fonts
-    DummyFontData // pData:       Pointer to the bitmap data
-};
+#define FONT_ADDRESS 0x8c1a70cc
+PegFont *pSystemFont = (PegFont *)FONT_ADDRESS;
 
 // =================================================================
 // Helper Functions
 // =================================================================
+
+int getCharPixelWidth(TCHAR ch, const PegFont *pFont) {
+  if (!pFont || ch < pFont->wFirstChar || ch >= pFont->wLastChar) {
+    return 0;
+  }
+  int charIndex = ch - pFont->wFirstChar;
+
+  // Width is the difference between the next char's offset and this char's
+  // offset.
+  int width = pFont->pOffsets[charIndex + 1] - pFont->pOffsets[charIndex];
+  return width;
+}
+
+// CORRECTED: Renders a single 1bpp character from a pitched font atlas.
+void drawVariableChar(TCHAR ch, PegPoint pos, const PegFont *pFont,
+                      uint16_t color) {
+  int width = getCharPixelWidth(ch, pFont);
+  if (width <= 0) {
+    return;
+  }
+
+  // Get the starting bit position for the top-left pixel of this character.
+  int startBitOffset = pFont->pOffsets[ch - pFont->wFirstChar];
+
+  // Loop for each row of the character
+  for (int y = 0; y < pFont->uHeight; y++) {
+    // Calculate the starting bit for the current row by adding the pitch for
+    // each row.
+    int startBitOfScanline = startBitOffset + (y * pFont->wBytesPerLine * 8);
+
+    // Loop for each pixel in the row
+    for (int x = 0; x < width; x++) {
+      int currentBit = startBitOfScanline + x;
+      int byteIndex = currentBit / 8;
+      int bitInByte = 7 - (currentBit % 8);
+
+      // Check if the bit is set in the data blob
+      if ((pFont->pData[byteIndex] >> bitInByte) & 1) {
+        // Draw the pixel at the correct screen coordinate
+        setPixel(pos.x + x, pos.y + y, color);
+      }
+    }
+  }
+}
+
+// Renders a string of text using the variable-width font renderer.
+void drawString(const char *str, PegPoint pos, const PegFont *pFont,
+                uint16_t color) {
+  PegPoint currentPos = pos;
+  for (int i = 0; str[i] != '\0'; i++) {
+    TCHAR ch = str[i];
+    drawVariableChar(ch, currentPos, pFont, color);
+    // Advance the X position by the width of the character just drawn
+    currentPos.x += getCharPixelWidth(ch, pFont);
+  }
+}
 
 // Prints a formatted header for each test page.
 void printHeader(const char *title) {
@@ -236,9 +275,9 @@ extern "C" int __attribute__((section(".bootstrap.text"))) main(void) {
     printHeader("Test 8: PegFont & PegTextThing");
 
     // Test the static font functions
-    PegTextThing::SetDefaultFont(PEG_DEFAULT_FONT, &DummyFont);
+    PegTextThing::SetDefaultFont(PEG_DEFAULT_FONT, pSystemFont);
     PegFont *pFont = PegTextThing::GetDefaultFont(PEG_DEFAULT_FONT);
-    printTestResult("GetDefaultFont returns set font", pFont == &DummyFont,
+    printTestResult("GetDefaultFont returns set font", pFont == pSystemFont,
                     true);
 
     // Test PegTextThing instantiation
@@ -249,43 +288,35 @@ extern "C" int __attribute__((section(".bootstrap.text"))) main(void) {
     printf("Now rendering to screen...\n");
     fflush(stdout);
 
+    // --- Display Font Information ---
+    printHeader("In-Memory Font Test");
+    printf("Accessing PegFont struct at 0x%08X\n", pSystemFont);
+    printf("Font Height: %d\n", pSystemFont->uHeight);
+    printf("Char Range: %d - %d\n", pSystemFont->wFirstChar,
+           pSystemFont->wLastChar);
+    printf("Atlas Pitch (Bytes/Line): %d\n", pSystemFont->wBytesPerLine);
+
     // Visual test: Draw the characters to the screen
-    fillScreen(color(0, 0, 0));                         // Black background
-    drawChar('A', {10, 20}, pFont, color(255, 255, 0)); // Yellow 'A'
-    drawChar('B', {20, 20}, pFont, color(0, 255, 255)); // Cyan 'B'
-    LCD_Refresh();
-    Debug_WaitKey();
-
     fillScreen(color(0, 0, 0)); // Black background
+    // --- Visual Test ---
+    printf("\nRendering font to screen...\n");
+    fflush(stdout);
 
-    // Create a PegTextThing with a string to display
-    PegTextThing line1("PEG TEST", TT_COPY);
-    line1.SetFont(&Latin_Font_9);
+    fillScreen(color(255, 255, 255)); // White background
 
-    PegTextThing line2("0123456789", TT_COPY);
-    line2.SetFont(&Latin_Font_9);
+    // Define some text to draw
+    const char *line1 = "Hello, World!";
+    const char *line2 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const char *line3 = "abcdefghijklmnopqrstuvwxyz";
+    const char *line4 = "0123456789 `~!@#$%^&*()";
+    const char *line5 = "-_=+[]{}|;:'\",./<>?";
 
-    // Get the text to render
-    TCHAR *text1 = line1.DataGet();
-    TCHAR *text2 = line2.DataGet();
-
-    PegPoint pos = {10, 20}; // Starting position
-
-    // Draw the first line
-    for (int i = 0; text1[i] != '\0'; i++) {
-      drawChar(text1[i], pos, &Latin_Font_9, color(255, 255, 0)); // Yellow
-      pos.x += 8; // Advance X position for next char (8 pixels wide)
-    }
-
-    // Move to the next line
-    pos.x = 10;
-    pos.y += 12; // Move Y down by 12 pixels
-
-    // Draw the second line
-    for (int i = 0; text2[i] != '\0'; i++) {
-      drawChar(text2[i], pos, &Latin_Font_9, color(0, 255, 255)); // Cyan
-      pos.x += 8;
-    }
+    // Draw the text using the in-memory font
+    drawString(line1, {10, 10}, pSystemFont, color(0, 0, 0));
+    drawString(line2, {10, 30}, pSystemFont, color(255, 0, 0));   // Red
+    drawString(line3, {10, 50}, pSystemFont, color(0, 128, 0));   // Green
+    drawString(line4, {10, 70}, pSystemFont, color(0, 0, 255));   // Blue
+    drawString(line5, {10, 90}, pSystemFont, color(128, 0, 128)); // Purple
 
     LCD_Refresh();
     Debug_WaitKey();
