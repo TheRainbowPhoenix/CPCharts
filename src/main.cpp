@@ -154,176 +154,205 @@ void drawChar(TCHAR ch, PegPoint pos, const PegFont *pFont, uint16_t color) {
   }
 }
 
+#define BASE_TEST 0
+
 extern "C" int __attribute__((section(".bootstrap.text"))) main(void) {
   calcInit();
 
-  PegRect rectA, rectB, rectC, resultRect, expectedRect;
-  PegPoint p1, p2;
-
-  // --- Test Flow ---
   do {
-    // ======================== Test 1: Initialization ========================
-    printHeader("Test 1: Initialization");
-    rectA.Set(10, 10, 100, 60);
-    p1.x = 20;
-    p1.y = 20;
-    p2.x = 120;
-    p2.y = 70;
-    rectB.Set(p1, p2);
-    printRect("Rect A (from integers)", rectA);
-    printRect("Rect B (from PegPoints)", rectB);
-    printTestResult("Rect A Width", rectA.Width() == 91, true);
-    printTestResult("Rect A Height", rectA.Height() == 51, true);
-    printTestResult("Rect B Width", rectB.Width() == 101, true);
-    if (!waitForKeyPress())
-      break;
+    if (BASE_TEST) {
+      PegRect rectA, rectB, rectC, resultRect, expectedRect;
+      PegPoint p1, p2;
 
-    // =================== Test 2: Contains & Overlap ===================
-    printHeader("Test 2: Contains & Overlap");
-    rectC.Set(20, 20, 40, 40);
-    p1.x = 30;
-    p1.y = 30;
-    p2.x = 0;
-    p2.y = 0;
-    printRect("Container Rect A", rectA);
-    printRect("Contained Rect C", rectC);
-    printTestResult("A.Contains(30,30)", rectA.Contains(p1), true);
-    printTestResult("A.Contains(0,0)", rectA.Contains(p2), false);
-    printTestResult("A.Contains(C)", rectA.Contains(rectC), true);
-    printTestResult("A.Overlap(B)", rectA.Overlap(rectB), true);
-    if (!waitForKeyPress())
-      break;
+      // --- Test Flow ---
+      // ======================== Test 1: Initialization
+      // ========================
+      printHeader("Test 1: Initialization");
+      rectA.Set(10, 10, 100, 60);
+      p1.x = 20;
+      p1.y = 20;
+      p2.x = 120;
+      p2.y = 70;
+      rectB.Set(p1, p2);
+      printRect("Rect A (from integers)", rectA);
+      printRect("Rect B (from PegPoints)", rectB);
+      printTestResult("Rect A Width", rectA.Width() == 91, true);
+      printTestResult("Rect A Height", rectA.Height() == 51, true);
+      printTestResult("Rect B Width", rectB.Width() == 101, true);
+      if (!waitForKeyPress())
+        break;
 
-    // ====================== Test 3: Movement ======================
-    printHeader("Test 3: Movement");
-    rectA.Set(10, 10, 100, 60); // Reset A
-    printRect("Rect A initial", rectA);
-    rectA.Shift(10, 10);
-    expectedRect.Set(20, 20, 110, 70);
-    printTestResult("A after Shift(10,10)", rectA, expectedRect);
-    rectA.MoveTo(0, 0);
-    expectedRect.Set(0, 0, 90, 50);
-    printTestResult("A after MoveTo(0,0)", rectA, expectedRect);
-    if (!waitForKeyPress())
-      break;
+      // =================== Test 2: Contains & Overlap ===================
+      printHeader("Test 2: Contains & Overlap");
+      rectC.Set(20, 20, 40, 40);
+      p1.x = 30;
+      p1.y = 30;
+      p2.x = 0;
+      p2.y = 0;
+      printRect("Container Rect A", rectA);
+      printRect("Contained Rect C", rectC);
+      printTestResult("A.Contains(30,30)", rectA.Contains(p1), true);
+      printTestResult("A.Contains(0,0)", rectA.Contains(p2), false);
+      printTestResult("A.Contains(C)", rectA.Contains(rectC), true);
+      printTestResult("A.Overlap(B)", rectA.Overlap(rectB), true);
+      if (!waitForKeyPress())
+        break;
 
-    // =================== Test 4: Comparison Operators ===================
-    printHeader("Test 4: Comparison Operators");
-    rectA.Set(10, 10, 50, 50);
-    rectB.Set(10, 10, 50, 50);
-    rectC.Set(0, 0, 1, 1);
-    printRect("Rect A", rectA);
-    printRect("Rect B", rectB);
-    printRect("Rect C", rectC);
-    printTestResult("A == B", (rectA == rectB), true);
-    printTestResult("A != C", (rectA != rectC), true);
-    if (!waitForKeyPress())
-      break;
+      // ====================== Test 3: Movement ======================
+      printHeader("Test 3: Movement");
+      rectA.Set(10, 10, 100, 60); // Reset A
+      printRect("Rect A initial", rectA);
+      rectA.Shift(10, 10);
+      expectedRect.Set(20, 20, 110, 70);
+      printTestResult("A after Shift(10,10)", rectA, expectedRect);
+      rectA.MoveTo(0, 0);
+      expectedRect.Set(0, 0, 90, 50);
+      printTestResult("A after MoveTo(0,0)", rectA, expectedRect);
+      if (!waitForKeyPress())
+        break;
 
-    // =================== Test 5: Geometric Operators ===================
-    printHeader("Test 5: Geometric Operators");
-    rectA.Set(0, 0, 50, 50);
-    rectB.Set(30, 30, 80, 80);
-    printRect("Rect A", rectA);
-    printRect("Rect B", rectB);
-    resultRect = rectA & rectB;
-    expectedRect.Set(30, 30, 50, 50);
-    printTestResult("Intersection (A & B)", resultRect, expectedRect);
-    rectA |= rectB;
-    expectedRect.Set(0, 0, 80, 80);
-    printTestResult("Union (A |= B)", rectA, expectedRect);
-    if (!waitForKeyPress())
-      break;
+      // =================== Test 4: Comparison Operators ===================
+      printHeader("Test 4: Comparison Operators");
+      rectA.Set(10, 10, 50, 50);
+      rectB.Set(10, 10, 50, 50);
+      rectC.Set(0, 0, 1, 1);
+      printRect("Rect A", rectA);
+      printRect("Rect B", rectB);
+      printRect("Rect C", rectC);
+      printTestResult("A == B", (rectA == rectB), true);
+      printTestResult("A != C", (rectA != rectC), true);
+      if (!waitForKeyPress())
+        break;
 
-    // =================== Test 6: Arithmetic & Growth ===================
-    printHeader("Test 6: Arithmetic & Growth");
-    rectA.Set(20, 20, 40, 40);
-    p1.x = 100;
-    p1.y = 50;
-    printRect("Rect A", rectA);
-    printf("Shift Point P1 at (%d, %d)\n", p1.x, p1.y);
-    resultRect = rectA + p1;
-    printRect("New Rect (A + P1)", resultRect);
-    printRect("Start Rect A", rectA);
-    rectA.Set(20, 20, 40, 40);
-    rectA++;
-    expectedRect.Set(19, 19, 41, 41);
-    printTestResult("A after ++", rectA, expectedRect);
-    rectA--;
-    expectedRect.Set(20, 20, 40, 40);
-    printTestResult("A after --", rectA, expectedRect);
-    rectA += 10;
-    expectedRect.Set(10, 10, 50, 50);
-    printTestResult("A after += 10", rectA, expectedRect);
-    rectA -= 5;
-    expectedRect.Set(15, 15, 45, 45);
-    printTestResult("A after -= 5", rectA, expectedRect);
-    if (!waitForKeyPress())
-      break;
+      // =================== Test 5: Geometric Operators ===================
+      printHeader("Test 5: Geometric Operators");
+      rectA.Set(0, 0, 50, 50);
+      rectB.Set(30, 30, 80, 80);
+      printRect("Rect A", rectA);
+      printRect("Rect B", rectB);
+      resultRect = rectA & rectB;
+      expectedRect.Set(30, 30, 50, 50);
+      printTestResult("Intersection (A & B)", resultRect, expectedRect);
+      rectA |= rectB;
+      expectedRect.Set(0, 0, 80, 80);
+      printTestResult("Union (A |= B)", rectA, expectedRect);
+      if (!waitForKeyPress())
+        break;
 
-    // =================== Test 7: Subtraction Operator ===================
-    printHeader("Test 7: Subtraction Operator (^=)");
-    rectA.Set(0, 0, 100, 100);
-    rectB.Set(50, 50, 150, 150);
-    printRect("Original A", rectA);
-    printRect("Clip Rect B", rectB);
-    rectA ^= rectB; // Subtract B from A
-    expectedRect.Set(0, 0, 49, 100);
-    printTestResult("Result A ^= B", rectA, expectedRect);
+      // =================== Test 6: Arithmetic & Growth ===================
+      printHeader("Test 6: Arithmetic & Growth");
+      rectA.Set(20, 20, 40, 40);
+      p1.x = 100;
+      p1.y = 50;
+      printRect("Rect A", rectA);
+      printf("Shift Point P1 at (%d, %d)\n", p1.x, p1.y);
+      resultRect = rectA + p1;
+      printRect("New Rect (A + P1)", resultRect);
+      printRect("Start Rect A", rectA);
+      rectA.Set(20, 20, 40, 40);
+      rectA++;
+      expectedRect.Set(19, 19, 41, 41);
+      printTestResult("A after ++", rectA, expectedRect);
+      rectA--;
+      expectedRect.Set(20, 20, 40, 40);
+      printTestResult("A after --", rectA, expectedRect);
+      rectA += 10;
+      expectedRect.Set(10, 10, 50, 50);
+      printTestResult("A after += 10", rectA, expectedRect);
+      rectA -= 5;
+      expectedRect.Set(15, 15, 45, 45);
+      printTestResult("A after -= 5", rectA, expectedRect);
+      if (!waitForKeyPress())
+        break;
 
-    // =================== Test 8: PegFont & PegTextThing ===================
-    printHeader("Test 8: PegFont & PegTextThing");
+      // =================== Test 7: Subtraction Operator ===================
+      printHeader("Test 7: Subtraction Operator (^=)");
+      rectA.Set(0, 0, 100, 100);
+      rectB.Set(50, 50, 150, 150);
+      printRect("Original A", rectA);
+      printRect("Clip Rect B", rectB);
+      rectA ^= rectB; // Subtract B from A
+      expectedRect.Set(0, 0, 49, 100);
+      printTestResult("Result A ^= B", rectA, expectedRect);
 
-    // Test the static font functions
-    PegTextThing::SetDefaultFont(PEG_DEFAULT_FONT, pSystemFont);
-    PegFont *pFont = PegTextThing::GetDefaultFont(PEG_DEFAULT_FONT);
-    printTestResult("GetDefaultFont returns set font", pFont == pSystemFont,
-                    true);
+      // =================== Test 8: PegFont & PegTextThing ===================
+      printHeader("Test 8: PegFont & PegTextThing");
 
-    // Test PegTextThing instantiation
-    PegTextThing myText("AB", TT_COPY);
-    myText.SetFont(pFont);
-    printf("PegTextThing created with text: '%s'\n", myText.DataGet());
+      // Test the static font functions
+      PegTextThing::SetDefaultFont(PEG_DEFAULT_FONT, pSystemFont);
+      PegFont *pFont = PegTextThing::GetDefaultFont(PEG_DEFAULT_FONT);
+      printTestResult("GetDefaultFont returns set font", pFont == pSystemFont,
+                      true);
 
-    printf("Now rendering to screen...\n");
-    fflush(stdout);
+      // Test PegTextThing instantiation
+      PegTextThing myText("AB", TT_COPY);
+      myText.SetFont(pFont);
+      printf("PegTextThing created with text: '%s'\n", myText.DataGet());
 
-    // --- Display Font Information ---
-    printHeader("In-Memory Font Test");
-    printf("Accessing PegFont struct at 0x%08X\n", pSystemFont);
-    printf("Font Height: %d\n", pSystemFont->uHeight);
-    printf("Char Range: %d - %d\n", pSystemFont->wFirstChar,
-           pSystemFont->wLastChar);
-    printf("Atlas Pitch (Bytes/Line): %d\n", pSystemFont->wBytesPerLine);
+      printf("Now rendering to screen...\n");
+      fflush(stdout);
 
-    // Visual test: Draw the characters to the screen
-    fillScreen(color(0, 0, 0)); // Black background
-    // --- Visual Test ---
-    printf("\nRendering font to screen...\n");
-    fflush(stdout);
+      // --- Display Font Information ---
+      printHeader("In-Memory Font Test");
+      printf("Accessing PegFont struct at 0x%08X\n", pSystemFont);
+      printf("Font Height: %d\n", pSystemFont->uHeight);
+      printf("Char Range: %d - %d\n", pSystemFont->wFirstChar,
+             pSystemFont->wLastChar);
+      printf("Atlas Pitch (Bytes/Line): %d\n", pSystemFont->wBytesPerLine);
 
+      // Visual test: Draw the characters to the screen
+      fillScreen(color(0, 0, 0)); // Black background
+      // --- Visual Test ---
+      printf("\nRendering font to screen...\n");
+      fflush(stdout);
+
+      fillScreen(color(255, 255, 255)); // White background
+
+      // Define some text to draw
+      const char *line1 = "Hello, World!";
+      const char *line2 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      const char *line3 = "abcdefghijklmnopqrstuvwxyz";
+      const char *line4 = "0123456789 `~!@#$%^&*()";
+      const char *line5 = "-_=+[]{}|;:'\",./<>?";
+
+      // Draw the text using the in-memory font
+      drawString(line1, {10, 10}, pSystemFont, color(0, 0, 0));
+      drawString(line2, {10, 30}, pSystemFont, color(255, 0, 0));   // Red
+      drawString(line3, {10, 50}, pSystemFont, color(0, 128, 0));   // Green
+      drawString(line4, {10, 70}, pSystemFont, color(0, 0, 255));   // Blue
+      drawString(line5, {10, 90}, pSystemFont, color(128, 0, 128)); // Purple
+
+      LCD_Refresh();
+      Debug_WaitKey();
+    }
+
+    printf("Start PegScreen test...\n");
+
+    PegScreen *pScreen = CreatePegScreen();
+    PegThing::SetScreenPtr(pScreen);
+
+    PegRect screenRect;
+    screenRect.Set(0, 0, SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1);
+    PegThing RootThing(screenRect);
+
+    // --- Start Drawing ---
+    pScreen->BeginDraw(&RootThing);
     fillScreen(color(255, 255, 255)); // White background
 
-    // Define some text to draw
-    const char *line1 = "Hello, World!";
-    const char *line2 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    const char *line3 = "abcdefghijklmnopqrstuvwxyz";
-    const char *line4 = "0123456789 `~!@#$%^&*()";
-    const char *line5 = "-_=+[]{}|;:'\",./<>?";
+    // Define text and color
+    const char *text = "Hello PEG Screen!";
+    PegColor textColor(color(0, 0, 0)); // Black text
 
-    // Draw the text using the in-memory font
-    drawString(line1, {10, 10}, pSystemFont, color(0, 0, 0));
-    drawString(line2, {10, 30}, pSystemFont, color(255, 0, 0));   // Red
-    drawString(line3, {10, 50}, pSystemFont, color(0, 128, 0));   // Green
-    drawString(line4, {10, 70}, pSystemFont, color(0, 0, 255));   // Blue
-    drawString(line5, {10, 90}, pSystemFont, color(128, 0, 128)); // Purple
-
+    pScreen->DrawText(&RootThing, {20, 20}, text, textColor, pSystemFont);
+    // --- End Drawing ---
+    pScreen->EndDraw();
     LCD_Refresh();
     Debug_WaitKey();
+    // Clean up
+    delete pScreen;
 
     if (!waitForKeyPress())
       break;
-
   } while (false); // Loop only once, using 'break' to exit early.
 
   // --- Final Exit Message ---
