@@ -3,6 +3,21 @@
 
 class PegThing; // Forward reference
 
+#ifdef PEG_FULL_CLIPPING
+
+#define VIEWPORT_LIST_INCREMENT                                                \
+  32 // This is how many viewports to add when
+     // we run out. There is a global pool of
+     // viewports, allocated to each PSF_VIEWPORT
+     // OBJECT as needed.
+
+struct Viewport {
+  PegRect mView;
+  Viewport *pNext;
+};
+
+#endif
+
 class PegScreen {
 public:
   PegScreen(const PegRect &);
@@ -37,6 +52,13 @@ public:
   virtual SIGNED TextWidth(const TCHAR *Text, PegFont *Font, SIGNED iLen = -1);
   virtual SIGNED TextHeight(const TCHAR *Text, PegFont *Font);
 
+  void Invalidate(const PegRect &Rect);
+
+#ifdef PEG_FULL_CLIPPING
+  void GenerateViewportList(PegThing *pStart);
+  void FreeViewports(PegThing *pStart);
+#endif
+
 protected:
   // Helper to check if a rectangle is valid for drawing
   bool ClipRect(PegRect &Rect, PegRect &mClip) {
@@ -47,10 +69,26 @@ protected:
     return true;
   }
 
+#ifdef PEG_FULL_CLIPPING
+
+  void SplitView(PegThing *pTarget, PegRect Top, PegRect Bottom);
+  void SplitView(PegThing *pTarget, PegThing *Child, PegRect Under);
+  void AddViewport(PegThing *pTarget, PegRect NewRect);
+  void AllocateViewportBlock();
+  Viewport *GetFreeViewport(void);
+  Viewport *mpFreeListStart;
+  Viewport *mpFreeListEnd;
+
+#endif
+
+  PegRect mInvalid;
+  PegRect mVirtualRect;
   SIGNED mwHRes;
   SIGNED mwVRes;
+  WORD mwTotalViewports;
   WORD mwDrawNesting;
-  UCHAR **mpScanPointers; // Will point to our frame buffer
+  SIGNED miInvalidCount;
+  WORD **mpScanPointers; // Will point to our frame buffer
 };
 
 // This function will be defined in l16screen.cpp

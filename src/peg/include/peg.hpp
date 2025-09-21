@@ -38,10 +38,12 @@ Notes:
 #include "pfonts.hpp"
 // #include "psysfont.hpp"
 
+#include "pmessage.hpp"
+
 #include "pscreen.hpp"
+
 #include "pthing.hpp"
 
-// #include "pmessage.hpp"
 #include "l16screen.hpp"
 
 // #include "pmenu.hpp"

@@ -52,6 +52,35 @@ enum PegSystemMessage {
 const WORD FIRST_SIGNAL = 128;
 const WORD FIRST_USER_MESSAGE = 0x4000;
 
-// class PegThing;             // forward reference
+class PegThing; // forward reference
+
+// clang-format off
+
+struct PegMessage
+{
+	public:
+    PegMessage() {Next = NULL; pTarget = NULL; pSource = NULL;}
+    PegMessage(WORD wVal) {Next = NULL; pTarget = NULL; pSource = NULL; wType = wVal;}
+    PegMessage(PegThing *pTo, WORD wVal) {Next = NULL; pTarget = pTo; pSource = NULL; wType = wVal;}
+    WORD wType;
+    SIGNED iData;
+    PegThing *pTarget;
+    PegThing *pSource;
+    PegMessage *Next;
+ 
+    union
+    {
+        void *pData;
+        LONG lData;
+        PegRect Rect;
+        PegPoint Point;
+        LONG    lUserData[2];
+        DWORD   dUserData[2];
+        SIGNED  iUserData[4];
+        WORD    wUserData[4];
+        UCHAR   uUserData[8];
+    };
+};
+
 
 #endif

@@ -4,7 +4,7 @@
 // Define our screen dimensions
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 240 // 528
-#define FRAME_BUFFER_BASE ((uint16_t *)0x8c000000)
+#define FRAME_BUFFER_BASE ((WORD *)0x8c000000)
 #define FRAME_BUFFER_PITCH 320 // Pitch in pixels (0x280 / 2)
 
 class L16Screen : public PegScreen {
@@ -32,6 +32,11 @@ protected:
   void VerticalLine(SIGNED yStart, SIGNED yEnd, SIGNED x, COLORVAL cColor,
                     SIGNED iWidth);
   COLORVAL GetPixelView(SIGNED x, SIGNED y);
+
+  // Driver-specific functions
+  WORD *GetVideoAddress(void);
+  void ConfigureController(void);
+  void MemoryToScreen(void);
 };
 
 #endif

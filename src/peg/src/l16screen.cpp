@@ -1,6 +1,7 @@
 #include "../include/peg.hpp"
 #include <sdk/calc/calc.hpp>
 #include <sdk/os/lcd.hpp>
+#include <sdk/os/mem.hpp>
 
 // The global factory function that creates an instance of our screen driver.
 PegScreen *CreatePegScreen(void) {
@@ -11,13 +12,28 @@ PegScreen *CreatePegScreen(void) {
 
 // L16Screen Constructor
 L16Screen::L16Screen(const PegRect &Rect) : PegScreen(Rect) {
-  // For a real RGB565 screen, there's no palette to set up.
-  // mpScanPointers will point directly to the hardware buffer if available,
-  // or a memory buffer. For now, we don't need to allocate it.
+  mwHRes = Rect.Width();
+  mwVRes = Rect.Height();
+  // Allocate an array of pointers, one for each scanline
+  /* mpScanPointers = (WORD **)LCD_GetVRAMAddress();
+
+  // Get the base address of our software buffer
+  WORD PEGFAR *CurrentPtr = GetVideoAddress();
+
+  // Initialize each pointer in the array to the start of a scanline
+  for (SIGNED iLoop = 0; iLoop < mwVRes; iLoop++) {
+    mpScanPointers[iLoop] = CurrentPtr;
+    CurrentPtr += mwHRes; // Pitch is the screen width for 16bpp
+  }
+  */
+
+  mwDrawNesting = 0;
+  ConfigureController();
 }
 
 L16Screen::~L16Screen() {
   // Clean up any allocated memory
+  // delete[] mpScanPointers;
 }
 
 inline void PlotPointView(int x, int y, uint16_t color) {
@@ -26,31 +42,59 @@ inline void PlotPointView(int x, int y, uint16_t color) {
   }
 }
 
+WORD *L16Screen::GetVideoAddress(void) { return LCD_GetVRAMAddress(); }
+
+void L16Screen::ConfigureController(void) {
+  LCD_ClearScreen();
+  // memset(FRAME_BUFFER_BASE, 0, SCREEN_WIDTH * SCREEN_HEIGHT * 2);
+}
+
+void L16Screen::MemoryToScreen(void) { LCD_Refresh(); }
+
 // --- Stubbed out functions (we will implement these later) ---
 
 void L16Screen::BeginDraw(PegThing *) { mwDrawNesting++; }
 void L16Screen::EndDraw() {
   mwDrawNesting--;
-  if (!mwDrawNesting)
-    LCD_Refresh();
+  if (!mwDrawNesting) {
+    MemoryToScreen();
+  }
 }
 void L16Screen::SetPointerType(UCHAR bType) { (void)bType; } // Do nothing
 void L16Screen::SetPalette(SIGNED iFirst, SIGNED iNum, const UCHAR *pGet) {
   (void)iFirst;
   (void)iNum;
   (void)pGet;
-} // Do nothing for RGB565
+}
+
+void L16Screen::HorizontalLine(SIGNED xStart, SIGNED xEnd, SIGNED y,
+                               COLORVAL color, SIGNED width) {
+  while (width-- > 0) {
+    WORD *pPut = mpScanPointers[y] + xStart;
+    for (int i = xStart; i <= xEnd; i++) {
+      *pPut++ = color;
+    }
+    y++;
+  }
+}
+void L16Screen::VerticalLine(SIGNED yStart, SIGNED yEnd, SIGNED x,
+                             COLORVAL color, SIGNED width) {
+  while (width-- > 0) {
+    for (int i = yStart; i <= yEnd; i++) {
+      PlotPointView(x, i, color);
+    }
+    x++;
+  }
+}
+
 void L16Screen::LineView(SIGNED, SIGNED, SIGNED, SIGNED, PegRect &, PegColor,
                          SIGNED) {}
 void L16Screen::BitmapView(const PegPoint, const PegBitmap *, const PegRect &) {
 }
 void L16Screen::RectMoveView(PegThing *, const PegRect &, const SIGNED,
                              const SIGNED) {}
-void L16Screen::HorizontalLine(SIGNED, SIGNED, SIGNED, COLORVAL, SIGNED) {}
-void L16Screen::VerticalLine(SIGNED, SIGNED, SIGNED, COLORVAL, SIGNED) {}
 COLORVAL L16Screen::GetPixelView(SIGNED x, SIGNED y) { return 0; }
 
-// --- The IMPORTANT function: DrawTextView for our 1bpp font ---
 void L16Screen::DrawTextView(PegPoint Where, const TCHAR *Text, PegColor &Color,
                              PegFont *Font, SIGNED iCount, PegRect &Rect) {
 #ifdef PEG_UNICODE

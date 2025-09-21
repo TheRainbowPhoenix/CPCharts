@@ -154,15 +154,25 @@ void drawChar(TCHAR ch, PegPoint pos, const PegFont *pFont, uint16_t color) {
   }
 }
 
+class ViewportThing : public PegThing {
+public:
+  ViewportThing(const PegRect &Rect) : PegThing(Rect) {
+    mwStatus |= PSF_VIEWPORT; // This is the crucial flag
+  }
+
+  // Add a public way to set our viewport list for this demo
+  void SetViewportList(Viewport *pList) { mpViewportList = pList; }
+};
+
 #define BASE_TEST 0
 
 extern "C" int __attribute__((section(".bootstrap.text"))) main(void) {
   calcInit();
 
   do {
+    PegRect rectA, rectB, rectC, resultRect, expectedRect;
+    PegPoint p1, p2;
     if (BASE_TEST) {
-      PegRect rectA, rectB, rectC, resultRect, expectedRect;
-      PegPoint p1, p2;
 
       // --- Test Flow ---
       // ======================== Test 1: Initialization
@@ -336,7 +346,7 @@ extern "C" int __attribute__((section(".bootstrap.text"))) main(void) {
     PegThing RootThing(screenRect);
 
     // --- Start Drawing ---
-    pScreen->BeginDraw(&RootThing);
+    // pScreen->BeginDraw(&RootThing);
     fillScreen(color(255, 255, 255)); // White background
 
     // Define text and colors
@@ -347,11 +357,30 @@ extern "C" int __attribute__((section(".bootstrap.text"))) main(void) {
     PegColor Black(color(0, 0, 0));
     PegColor Red(color(255, 0, 0));
     PegColor Blue(color(0, 0, 255));
+    PegColor Green(color(100, 255, 100));
 
-    // 4. Use the official PegScreen::DrawText method
-    pScreen->DrawText(&RootThing, {10, 10}, line1, Black, pSystemFont);
-    pScreen->DrawText(&RootThing, {10, 30}, line2, Red, pSystemFont);
-    pScreen->DrawText(&RootThing, {10, 50}, line3, Blue, pSystemFont);
+    // pScreen->DrawText(&RootThing, {10, 10}, line1, Black, pSystemFont);
+    // pScreen->DrawText(&RootThing, {10, 30}, line2, Red, pSystemFont);
+    // pScreen->DrawText(&RootThing, {10, 50}, line3, Blue, pSystemFont);
+    // pScreen->DrawText(&RootThing, {238, 50}, line2, Black, pSystemFont);
+
+    // 2. Create two "windows" which will own viewports
+    rectA.Set(10, 10, 150, 100);
+    ViewportThing Vp1(rectA);
+
+    rectB.Set(170, 50, 310, 200);
+    ViewportThing Vp2(rectB);
+
+    pScreen->GenerateViewportList(&Vp1);
+    pScreen->GenerateViewportList(&Vp2);
+
+    pScreen->BeginDraw(&Vp1);
+    // fillScreen(color(50, 50, 50));
+    const char *text = "This text is clipped by Viewport 1";
+    pScreen->DrawText(&Vp1, {5, 5}, text, Blue, pSystemFont);
+    pScreen->DrawText(&Vp2, {160, 60}, "This text is clipped by Viewport 2",
+                      Green, pSystemFont);
+
     // --- End Drawing ---
     pScreen->EndDraw();
     LCD_Refresh();
