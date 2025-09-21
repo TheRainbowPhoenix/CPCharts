@@ -339,11 +339,19 @@ extern "C" int __attribute__((section(".bootstrap.text"))) main(void) {
     pScreen->BeginDraw(&RootThing);
     fillScreen(color(255, 255, 255)); // White background
 
-    // Define text and color
-    const char *text = "Hello PEG Screen!";
-    PegColor textColor(color(0, 0, 0)); // Black text
+    // Define text and colors
+    const char *line1 = "Hello, PEG Screen!";
+    const char *line2 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const char *line3 = "0123456789!@#$%^&*()";
 
-    pScreen->DrawText(&RootThing, {20, 20}, text, textColor, pSystemFont);
+    PegColor Black(color(0, 0, 0));
+    PegColor Red(color(255, 0, 0));
+    PegColor Blue(color(0, 0, 255));
+
+    // 4. Use the official PegScreen::DrawText method
+    pScreen->DrawText(&RootThing, {10, 10}, line1, Black, pSystemFont);
+    pScreen->DrawText(&RootThing, {10, 30}, line2, Red, pSystemFont);
+    pScreen->DrawText(&RootThing, {10, 50}, line3, Blue, pSystemFont);
     // --- End Drawing ---
     pScreen->EndDraw();
     LCD_Refresh();

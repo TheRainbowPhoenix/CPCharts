@@ -30,17 +30,43 @@ SIGNED PegScreen::TextWidth(const TCHAR *Text, PegFont *Font, SIGNED iLen) {
   if (!Text || !Font)
     return 0;
 
-  const UCHAR *pt = (const UCHAR *)Text;
-  WORD cVal = *pt++;
-  WORD *pOffset = Font->pOffsets;
-  WORD wStart = Font->wFirstChar;
+  WORD cVal;
+  PegFont *pFont;
+
+  /*
+      if (!IS_VARWIDTH(Font))     // fixed width font? Not supported...
+      {
+          WORD wCharWidth = (WORD) Font->pOffsets;
+          cVal = *Text++;
+          while(cVal && iLen--)
+          {
+              iWidth += wCharWidth;
+              cVal = *Text++;
+          }
+          return iWidth;
+      }
+  */
+
+  cVal = *Text++;
 
   while (cVal && iLen--) {
-    if (cVal >= Font->wFirstChar && cVal <= Font->wLastChar) {
-      WORD wOffset = cVal - wStart;
-      iWidth += *(pOffset + wOffset + 1) - *(pOffset + wOffset);
+    pFont = Font;
+    while (pFont) {
+      if (cVal >= pFont->wFirstChar && cVal <= pFont->wLastChar) {
+        break;
+      }
+      pFont = pFont->pNext;
     }
-    cVal = *pt++;
+
+    if (!pFont) {
+      cVal = *Text++;
+      continue;
+    }
+
+    WORD *pOffset = pFont->pOffsets;
+    WORD wOffset = cVal - pFont->wFirstChar;
+    iWidth += *(pOffset + wOffset + 1) - *(pOffset + wOffset);
+    cVal = *Text++;
   }
   return iWidth;
 }

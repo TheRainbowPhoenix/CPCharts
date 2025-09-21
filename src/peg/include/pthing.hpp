@@ -8,24 +8,33 @@ class PegMessageQueue;
 
 class PegThing {
 public:
-  // A minimal constructor
-  PegThing(const PegRect &Rect) : mClip(Rect) {}
+  PegThing(const PegRect &Rect, WORD wId = 0)
+      : mReal(Rect), mClient(Rect), mClip(Rect), mwId(wId) {}
+  PegThing() {
+    mReal.Set(0, 0, 0, 0);
+    mClient = mClip = mReal;
+    mwId = 0;
+  }
+  virtual ~PegThing() {}
 
-  // Dummy functions that PegScreen needs to compile
-  bool StatusIs(WORD wMask) {
-    return (wMask & PSF_VISIBLE);
-  } // Assume always visible for now
-  PegThing *Parent() { return nullptr; }
+  bool StatusIs(WORD wMask) { return (mwStatus & wMask); }
+  PegThing *Parent() { return mpParent; }
 
-  // The clipping rectangle is the only member we need for now.
-  PegRect mClip;
-
-  // Dummy static pointers. We will set the screen pointer.
+  // Static pointers for the global PEG environment
   static PegScreen *mpScreen;
   static PegPresentationManager *mpPresentation;
   static PegMessageQueue *mpMessageQueue;
-
   static void SetScreenPtr(PegScreen *ps) { mpScreen = ps; }
+
+  // Member variables needed for drawing and identification
+  PegRect mReal;
+  PegRect mClient;
+  PegRect mClip;
+  WORD mwId;
+  WORD mwStatus = PSF_VISIBLE; // Assume visible by default for simplicity
+
+protected:
+  PegThing *mpParent = nullptr;
 };
 
 #endif

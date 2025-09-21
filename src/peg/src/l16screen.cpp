@@ -2,18 +2,6 @@
 #include <sdk/calc/calc.hpp>
 #include <sdk/os/lcd.hpp>
 
-int getCharPixelWidth_int(TCHAR ch, const PegFont *pFont) {
-  if (!pFont || ch < pFont->wFirstChar || ch >= pFont->wLastChar) {
-    return 0;
-  }
-  int charIndex = ch - pFont->wFirstChar;
-
-  // Width is the difference between the next char's offset and this char's
-  // offset.
-  int width = pFont->pOffsets[charIndex + 1] - pFont->pOffsets[charIndex];
-  return width;
-}
-
 // The global factory function that creates an instance of our screen driver.
 PegScreen *CreatePegScreen(void) {
   PegRect rect;
@@ -30,6 +18,12 @@ L16Screen::L16Screen(const PegRect &Rect) : PegScreen(Rect) {
 
 L16Screen::~L16Screen() {
   // Clean up any allocated memory
+}
+
+inline void PlotPointView(int x, int y, uint16_t color) {
+  if (x >= 0 && x < SCREEN_WIDTH && y >= 0 && y < SCREEN_HEIGHT) {
+    *(FRAME_BUFFER_BASE + (y * FRAME_BUFFER_PITCH) + x) = color;
+  }
 }
 
 // --- Stubbed out functions (we will implement these later) ---
@@ -58,41 +52,129 @@ COLORVAL L16Screen::GetPixelView(SIGNED x, SIGNED y) { return 0; }
 
 // --- The IMPORTANT function: DrawTextView for our 1bpp font ---
 void L16Screen::DrawTextView(PegPoint Where, const TCHAR *Text, PegColor &Color,
-                             PegFont *pFont, SIGNED iCount, PegRect &Rect) {
-  PegPoint currentPos = Where;
-  const UCHAR *pt = (const UCHAR *)Text;
-  WORD cVal = *pt++;
+                             PegFont *Font, SIGNED iCount, PegRect &Rect) {
+#ifdef PEG_UNICODE
+  TCHAR PEGFAR *pCurrentChar = (TCHAR PEGFAR *)Text;
+  PegFont *pFontStart = Font;
+#else
+  UCHAR PEGFAR *pCurrentChar = (UCHAR PEGFAR *)Text;
+#endif
 
-  while (cVal && iCount--) {
-    int width = getCharPixelWidth_int(cVal, pFont);
-    if (width <= 0) {
-      cVal = *pt++;
+  UCHAR PEGFAR *pGetData;
+  UCHAR PEGFAR *pGetDataBase;
+  WORD wIndex;
+  WORD wBitOffset;
+  SIGNED wXpos = Where.x;
+  WORD cVal = *pCurrentChar++;
+  SIGNED iCharWidth;
+
+#ifdef DO_OUTLINE_TEXT
+  if (IS_OUTLINE(Font)) {
+    DrawOutlineText(Where, Text, Color, Font, iCount, Rect);
+    return;
+  }
+#endif
+
+  while (cVal && wXpos <= Rect.wRight) {
+    if (iCount == 0) {
+      return;
+    }
+    iCount--;
+
+#ifdef PEG_UNICODE
+    Font = pFontStart;
+
+    while (Font) {
+      if (cVal >= Font->wFirstChar && cVal <= Font->wLastChar) {
+        break;
+      }
+      Font = Font->pNext;
+    }
+    if (!Font) // this font doesn't contain this glyph?
+    {
+      cVal = *pCurrentChar++; // just skip to next char
       continue;
     }
 
-    int startBitOffset = pFont->pOffsets[cVal - pFont->wFirstChar];
+    wIndex = cVal - (WORD)Font->wFirstChar;
 
-    for (int y = 0; y < pFont->uHeight; y++) {
-      int startBitOfScanline = startBitOffset + (y * pFont->wBytesPerLine * 8);
+    if (IS_VARWIDTH(Font)) {
+      wBitOffset = Font->pOffsets[wIndex];
+      iCharWidth = Font->pOffsets[wIndex + 1] - wBitOffset;
+    } else {
+      iCharWidth = (SIGNED)Font->pOffsets;
+      wBitOffset = iCharWidth * wIndex;
+    }
 
-      for (int x = 0; x < width; x++) {
-        int currentBit = startBitOfScanline + x;
-        int byteIndex = currentBit / 8;
-        int bitInByte = 7 - (currentBit % 8);
+#else
 
-        if ((pFont->pData[byteIndex] >> bitInByte) & 1) {
-          // Check if pixel is within the clipped rectangle
-          if (currentPos.x + x >= Rect.wLeft &&
-              currentPos.x + x <= Rect.wRight &&
-              currentPos.y + y >= Rect.wTop &&
-              currentPos.y + y <= Rect.wBottom) {
+    wIndex = cVal - (WORD)Font->wFirstChar;
+    wBitOffset = Font->pOffsets[wIndex];
+    iCharWidth = Font->pOffsets[wIndex + 1] - wBitOffset;
 
-            setPixel(currentPos.x + x, currentPos.y + y, Color.uForeground);
+#endif
+
+    if (wXpos + iCharWidth > Rect.wRight) {
+      iCharWidth = Rect.wRight - wXpos + 1;
+    }
+
+    WORD ByteOffset = wBitOffset / 8;
+    pGetDataBase = Font->pData + ByteOffset;
+    pGetDataBase += (Rect.wTop - Where.y) * Font->wBytesPerLine;
+
+    for (SIGNED ScanRow = Rect.wTop; ScanRow <= Rect.wBottom; ScanRow++) {
+      pGetData = pGetDataBase;
+      UCHAR InMask = 0x80 >> (wBitOffset & 7);
+      WORD wBitsOutput = 0;
+      UCHAR cData;
+
+#ifdef PEG_UNICODE
+      if (ScanRow - Where.y < Font->uHeight) {
+        cData = *pGetData++;
+      } else {
+        cData = 0;
+      }
+#else
+      cData = *pGetData++;
+#endif
+
+      while (wBitsOutput < iCharWidth) {
+        if (!InMask) {
+          InMask = 0x80;
+          // read a byte:
+
+#ifdef PEG_UNICODE
+          if (ScanRow - Where.y < Font->uHeight) {
+            cData = *pGetData++;
+          } else {
+            cData = 0;
+          }
+#else
+          cData = *pGetData++;
+#endif
+        }
+
+        if (wXpos >= Rect.wLeft) {
+          if (cData & InMask) // is this bit a 1?
+          {
+            PlotPointView(wXpos, ScanRow, Color.uForeground);
+          } else {
+            if (Color.uFlags & CF_FILL) {
+              PlotPointView(wXpos, ScanRow, Color.uBackground);
+            }
           }
         }
+        InMask >>= 1;
+        wXpos++;
+        wBitsOutput++;
+        if (wXpos > Rect.wRight) {
+          break;
+        }
       }
+      pGetDataBase += Font->wBytesPerLine;
+      wXpos -= iCharWidth;
     }
-    currentPos.x += width;
-    cVal = *pt++;
+    wXpos += iCharWidth;
+    cVal = *pCurrentChar++;
   }
 }

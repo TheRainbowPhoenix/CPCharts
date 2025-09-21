@@ -4,6 +4,8 @@
 // Define our screen dimensions
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 240 // 528
+#define FRAME_BUFFER_BASE ((uint16_t *)0x8c000000)
+#define FRAME_BUFFER_PITCH 320 // Pitch in pixels (0x280 / 2)
 
 class L16Screen : public PegScreen {
 public:
